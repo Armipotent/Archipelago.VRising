@@ -1,13 +1,9 @@
 using APVRising.Archipelago;
-using BepInEx.Logging;
-using FMOD;
 using HarmonyLib;
 using ProjectM;
-using ProjectM.Network;
 using Stunlock.Core;
-using Stunlock.Network;
+using System;
 using Unity.Collections;
-using Unity.Transforms;
 
 namespace APVRising.Hooks;
 
@@ -41,9 +37,18 @@ public class DeathEventHandler
                     string str = entityName.Value;
                     if (str.StartsWith("CHAR"))
                     {
-                        // TODO: Debug Code. Replace with call to AP Client to send a check.
-                        FixedString512Bytes strin = new($"{str} is kil");
-                        ServerChatUtils.SendSystemMessageToAllClients(Plugin.Server.EntityManager, ref strin);
+                        Plugin.BepinLogger.LogInfo($"An instance of {str} was killed. Attempting AP check send.");
+                        try
+                        {
+                            // TODO: Call to a System to queue an AP check
+                            // ArchipelagoClient.EntityNameToAPLocation[str];
+                        }
+                        catch (Exception e)
+                        {
+                            FixedString512Bytes errorTruncated = new($"Error converting entity name to AP check: {e}");
+                            Plugin.BepinLogger.LogError(errorTruncated);
+                            ServerChatUtils.SendSystemMessageToAllClients(Plugin.Server.EntityManager, ref errorTruncated);
+                        }
                     }
                 }
             }

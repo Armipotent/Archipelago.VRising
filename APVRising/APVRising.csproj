@@ -13,6 +13,14 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <RootNamespace>APVRising</RootNamespace>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <None Remove="Data\*.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Data\*.json"/>
+    </ItemGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
@@ -37,7 +45,7 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Archipelago.MultiClient.Net" Version="6.7.0" />
+        <PackageReference Include="Archipelago.MultiClient.Net" Version="6.7.0" IncludeAssets="compile" />
         <PackageReference Include="Archipelago.MultiClient.Net.Analyzers" Version="1.3.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

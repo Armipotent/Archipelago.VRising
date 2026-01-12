@@ -1,13 +1,9 @@
+using APVRising.Archipelago;
 using ProjectM.Network;
 using ProjectM;
 using Unity.Entities;
-using HarmonyLib;
 using Unity.Collections;
-using System;
-using System.Linq;
-using VampireCommandFramework.Common;
-using System.Text;
-using APVRising.Archipelago;
+using HarmonyLib;
 
 namespace APVRising.Hooks;
 

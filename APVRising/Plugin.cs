@@ -4,13 +4,13 @@ using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using UnityEngine;
-using VampireCommandFramework;
 using ProjectM.UI;
 using ProjectM;
-using Unity.Entities;
 using ProjectM.Scripting;
 using Stunlock.Core;
+using Unity.Entities;
+using UnityEngine;
+using VampireCommandFramework;
 
 namespace APVRising;
 
@@ -46,12 +46,12 @@ public class Plugin : BasePlugin
         if (IsServer)
         {
             ArchipelagoClient.Instance = new ArchipelagoClient();
+
+            // Register all commands in the assembly with VCF
+            CommandRegistry.RegisterAll();
+
+            ArchipelagoConsole.LogMessage($"{ModDisplayInfo} loaded!");
         }
-
-        // Register all commands in the assembly with VCF
-        CommandRegistry.RegisterAll();
-
-        ArchipelagoConsole.LogMessage($"{ModDisplayInfo} loaded!");
     }
 
     public override bool Unload()

@@ -1,128 +1,127 @@
-﻿using System;
-using System.Collections.Generic;
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+﻿using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using BepInEx;
 using ProjectM;
 using Unity.Collections;
+using System;
+using System.Collections.Generic;
 
-namespace APVRising.Archipelago
+namespace APVRising.Archipelago;
+
+public class DeathLinkHandler
 {
-    public class DeathLinkHandler
+    internal static bool deathLinkEnabled;
+    private string slotName;
+    private readonly DeathLinkService service;
+    private readonly Queue<DeathLink> deathLinks = new();
+
+    /// <summary>
+    /// instantiates our death link handler, sets up the hook for receiving death links, and enables death link if needed
+    /// </summary>
+    /// <param name="deathLinkService">The new DeathLinkService that our handler will use to send and
+    /// receive death links</param>
+    /// <param name="enableDeathLink">Whether we should enable death link or not on startup</param>
+    public DeathLinkHandler(DeathLinkService deathLinkService, string name, bool enableDeathLink = false)
     {
-        internal static bool deathLinkEnabled;
-        private string slotName;
-        private readonly DeathLinkService service;
-        private readonly Queue<DeathLink> deathLinks = new();
+        service = deathLinkService;
+        service.OnDeathLinkReceived += DeathLinkReceived;
+        slotName = name;
+        deathLinkEnabled = enableDeathLink;
 
-        /// <summary>
-        /// instantiates our death link handler, sets up the hook for receiving death links, and enables death link if needed
-        /// </summary>
-        /// <param name="deathLinkService">The new DeathLinkService that our handler will use to send and
-        /// receive death links</param>
-        /// <param name="enableDeathLink">Whether we should enable death link or not on startup</param>
-        public DeathLinkHandler(DeathLinkService deathLinkService, string name, bool enableDeathLink = false)
+        if (deathLinkEnabled)
         {
-            service = deathLinkService;
-            service.OnDeathLinkReceived += DeathLinkReceived;
-            slotName = name;
-            deathLinkEnabled = enableDeathLink;
-
-            if (deathLinkEnabled)
-            {
-                service.EnableDeathLink();
-            }
+            service.EnableDeathLink();
         }
+    }
 
-        /// <summary>
-        /// enables/disables death link
-        /// </summary>
-        public void ToggleDeathLink()
+    /// <summary>
+    /// enables/disables death link
+    /// </summary>
+    public void ToggleDeathLink()
+    {
+        deathLinkEnabled = !deathLinkEnabled;
+
+        if (deathLinkEnabled)
         {
-            deathLinkEnabled = !deathLinkEnabled;
-
-            if (deathLinkEnabled)
-            {
-                service.EnableDeathLink();
-            }
-            else
-            {
-                service.DisableDeathLink();
-            }
+            service.EnableDeathLink();
         }
-
-        /// <summary>
-        /// what happens when we receive a deathLink
-        /// </summary>
-        /// <param name="deathLink">Received Death Link object to handle</param>
-        private void DeathLinkReceived(DeathLink deathLink)
+        else
         {
-            deathLinks.Enqueue(deathLink);
-
-            Plugin.BepinLogger.LogDebug(deathLink.Cause.IsNullOrWhiteSpace()
-                ? $"Received Death Link from: {deathLink.Source}"
-                : deathLink.Cause);
+            service.DisableDeathLink();
         }
+    }
 
-        /// <summary>
-        /// can be called when in a valid state to kill the player, dequeueing and immediately killing the player with a
-        /// message if we have a death link in the queue
-        /// </summary>
-        public void KillPlayer()
+    /// <summary>
+    /// what happens when we receive a deathLink
+    /// </summary>
+    /// <param name="deathLink">Received Death Link object to handle</param>
+    private void DeathLinkReceived(DeathLink deathLink)
+    {
+        deathLinks.Enqueue(deathLink);
+
+        Plugin.BepinLogger.LogDebug(deathLink.Cause.IsNullOrWhiteSpace()
+            ? $"Received Death Link from: {deathLink.Source}"
+            : deathLink.Cause);
+    }
+
+    /// <summary>
+    /// can be called when in a valid state to kill the player, dequeueing and immediately killing the player with a
+    /// message if we have a death link in the queue
+    /// </summary>
+    public void KillPlayer()
+    {
+        try
         {
-            try
-            {
-                if (deathLinks.Count < 1) return;
+            if (deathLinks.Count < 1) return;
 
-                var deathLink = deathLinks.Dequeue();
-                var cause = deathLink.Cause.IsNullOrWhiteSpace() ? GetDeathLinkCause(deathLink) : deathLink.Cause;
+            var deathLink = deathLinks.Dequeue();
+            var cause = deathLink.Cause.IsNullOrWhiteSpace() ? GetDeathLinkCause(deathLink) : deathLink.Cause;
 
-                //TODO kill the players
+            //TODO kill the players
 
-                //Plugin.Server.EntityManager.GetComponentData<PlayerCharacter>()
-                
-                
-                
-                FixedString512Bytes fixedString = new(cause);
-                ServerChatUtils.SendSystemMessageToAllClients(Plugin.Server.EntityManager, ref fixedString);
+            //Plugin.Server.EntityManager.GetComponentData<PlayerCharacter>()
 
-                Plugin.BepinLogger.LogMessage(cause);
-            }
-            catch (Exception e)
-            {
-                Plugin.BepinLogger.LogError(e);
-            }
+
+
+            FixedString512Bytes fixedString = new(cause);
+            ServerChatUtils.SendSystemMessageToAllClients(Plugin.Server.EntityManager, ref fixedString);
+
+            Plugin.BepinLogger.LogMessage(cause);
         }
-
-        /// <summary>
-        /// returns message for the player to see when a death link is received without a cause
-        /// </summary>
-        /// <param name="deathLink">death link object to get relevant info from</param>
-        /// <returns></returns>
-        private string GetDeathLinkCause(DeathLink deathLink)
+        catch (Exception e)
         {
-            return $"Received death from {deathLink.Source}";
+            Plugin.BepinLogger.LogError(e);
         }
+    }
 
-        /// <summary>
-        /// called to send a death link to the multiworld
-        /// </summary>
-        public void SendDeathLink()
+    /// <summary>
+    /// returns message for the player to see when a death link is received without a cause
+    /// </summary>
+    /// <param name="deathLink">death link object to get relevant info from</param>
+    /// <returns></returns>
+    private string GetDeathLinkCause(DeathLink deathLink)
+    {
+        return $"Received death from {deathLink.Source}";
+    }
+
+    /// <summary>
+    /// called to send a death link to the multiworld
+    /// </summary>
+    public void SendDeathLink()
+    {
+        try
         {
-            try
-            {
-                if (!deathLinkEnabled) return;
+            if (!deathLinkEnabled) return;
 
-                Plugin.BepinLogger.LogMessage("sharing your death...");
+            Plugin.BepinLogger.LogMessage("sharing your death...");
 
-                // add the cause here
-                var linkToSend = new DeathLink(slotName);
+            // add the cause here
+            var linkToSend = new DeathLink(slotName);
 
-                service.SendDeathLink(linkToSend);
-            }
-            catch (Exception e)
-            {
-                Plugin.BepinLogger.LogError(e);
-            }
+            service.SendDeathLink(linkToSend);
+        }
+        catch (Exception e)
+        {
+            Plugin.BepinLogger.LogError(e);
         }
     }
 }
