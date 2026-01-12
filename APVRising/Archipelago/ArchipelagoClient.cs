@@ -198,6 +198,9 @@ public class ArchipelagoClient
     }
 
     private static Dictionary<string, string> entityNameToAPLocation;
+    /// <summary>
+    /// Fetch a dictionary of entity names and AP location names. May not be all-inclusive, check at runtime.
+    /// </summary>
     public static Dictionary<string, string> EntityNameToAPLocation
     {
         get
